@@ -1,4 +1,5 @@
 from django.contrib.auth.models import BaseUserManager
+from django.contrib.auth.models import Group
 
 
 class UserManager(BaseUserManager):
@@ -27,4 +28,13 @@ class UserManager(BaseUserManager):
             raise ValueError('Superuser must have is_staff=True.')
         if kwargs.get('is_superuser') is not True:
             raise ValueError('Superuser must have is_superuser=True.')
-        return self._create_user(email, password, **kwargs)
+
+        user = self._create_user(email, password, ** kwargs)
+
+        try:
+            superusers = Group.objects.get(name__iexact='superusers')
+        except Group.DoesNotExist:
+            superusers = Group.objects.create(name='Superusers')
+        user.groups.add(superusers)
+        user.save()
+        return user
