@@ -9,6 +9,10 @@ class User(AbstractBaseUser):
     email = models.EmailField(unique=True, null=True)
     first_name = models.CharField(max_length=NAME_MAX_LENGTH)
     last_name = models.CharField(max_length=NAME_MAX_LENGTH)
+    is_superuser = models.BooleanField(
+        default=False,
+        help_text='This is a superuser, I think.'
+    )
     is_staff = models.BooleanField(
         'staff status',
         default = True,
