@@ -1,11 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import PermissionsMixin
 from addons.core.usermanager.models import UserManager
 # from django.utils.translation import ugettext_lazy as _
 
 NAME_MAX_LENGTH = 100
 
-class User(AbstractBaseUser):
+class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, null=True)
     first_name = models.CharField(max_length=NAME_MAX_LENGTH)
     last_name = models.CharField(max_length=NAME_MAX_LENGTH)
