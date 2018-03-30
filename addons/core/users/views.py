@@ -3,6 +3,7 @@ from .models import User
 from .serializers import UserSerializer
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password
+from lib.Logger import Logger
 
 
 
@@ -29,6 +30,9 @@ class Users(generics.ListAPIView):
 
     def post(self, request):
         data = request.data
+        Logger().info(
+            '{} user {}'.format('POST', data)
+        )
         is_valid = self.serializer_class(data=data).is_valid()
 
         if not is_valid:
@@ -82,6 +86,10 @@ class UserDetail(generics.ListAPIView):
     def put(self, request, pk=None):
         data = request.data
 
+        Logger().info(
+            '{} user {}'.format('PUT', data)
+        )
+
         is_valid = self.serializer_class(data=data).is_valid()
 
         if not is_valid:
@@ -112,5 +120,19 @@ class UserDetail(generics.ListAPIView):
             'message': 'OK',
             'status': 200,
             'data': user_serialized
+        }
+        return Response(context, status=context['status'])
+
+    def delete(self, request, pk=None):
+        Logger().info(
+            '{} user pk={}'.format('DELETE', pk)
+        )
+
+        user = User.objects.delete(pk=pk)
+        user.delete()
+
+        context = {
+            'message': 'OK',
+            'status': 204
         }
         return Response(context, status=context['status'])
