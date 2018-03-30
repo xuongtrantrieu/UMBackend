@@ -128,7 +128,7 @@ class UserDetail(generics.ListAPIView):
             '{} user pk={}'.format('DELETE', pk)
         )
 
-        user = User.objects.delete(pk=pk)
+        user = User.objects.get(pk=pk)
         user.delete()
 
         context = {
