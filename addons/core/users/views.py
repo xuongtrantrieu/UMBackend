@@ -9,9 +9,9 @@ from django.contrib.auth.hashers import make_password
 class Users(generics.ListAPIView):
     serializer_class = UserSerializer
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         user_list = User.objects.all()
-        user_list_serialized = self.serializer_class(user_list)
+        user_list_serialized = self.serializer_class(user_list, many=True).data
 
         if user_list:
             context = {
@@ -27,11 +27,11 @@ class Users(generics.ListAPIView):
 
         return Response(context, status=context['status'])
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         data = request.data
-        user_serialized = self.serializer_class(data=data)
+        is_valid = self.serializer_class(data=data).is_valid()
 
-        if not user_serialized.is_valid():
+        if not is_valid:
             context = {
                 'status': 400,
                 'message': 'INVALID INPUT'
@@ -46,10 +46,71 @@ class Users(generics.ListAPIView):
         )
         user.save()
 
+        user_serialized = self.serializer_class(user, many=False).data
         context = {
-            'data': user_serialized.validated_data,
+            'data': user_serialized,
             'message': 'OK',
             'status': 200
         }
 
+        return Response(context, status=context['status'])
+
+
+class UserDetail(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def get(self, request, pk=None):
+        user = User.objects.get(pk=pk)
+
+        if not user:
+            context = {
+                'message': 'USER NOT EXISTS',
+                'status': 400
+            }
+            return Response(context, status=context['status'])
+
+        user_serialized = self.serializer_class(user, many=False).data
+        context = {
+            'message': 'OK',
+            'status': 200,
+            'data': user_serialized
+        }
+
+        return Response(context, status=context['status'])
+
+    def put(self, request, pk=None):
+        data = request.data
+
+        is_valid = self.serializer_class(data=data).is_valid()
+
+        if not is_valid:
+            context = {
+                'message': 'INVALID INPUT DATA',
+                'status': 400
+            }
+            return Response(context, status=context['status'])
+
+        user = User.objects.get(pk=pk)
+
+        if not user:
+            context = {
+                'message': 'USER NOT EXISTS',
+                'status': 400
+            }
+            return Response(context, status=context['status'])
+
+        # user.email = data['email']
+        user.password = make_password(data['password'])
+        user.first_name = data['first_name']
+        user.last_name = data['last_name']
+        user.save()
+
+        user_serialized = self.serializer_class(user).data
+
+        context = {
+            'message': 'OK',
+            'status': 200,
+            'data': user_serialized
+        }
         return Response(context, status=context['status'])
