@@ -55,7 +55,8 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
-    )
+    ),
+    # 'JWT_VERIFY_EXPIRATION': False
 }
 
 MIDDLEWARE = [
