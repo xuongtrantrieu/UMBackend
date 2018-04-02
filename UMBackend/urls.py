@@ -16,9 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from .views import api_root
+from rest_framework_jwt.views import ObtainJSONWebToken
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', api_root),
-    path('users/', include('addons.core.users.urls'))
+    path('users/', include('addons.core.users.urls')),
+    path('login/', ObtainJSONWebToken.as_view())
 ]
