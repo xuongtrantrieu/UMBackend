@@ -66,7 +66,7 @@ class UserDetail(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     authentication_classes = (JSONWebTokenAuthentication,)
-    permission_classes = (DjangoObjectPermissions,)
+    # permission_classes = (DjangoObjectPermissions,)
 
     def get(self, request, *args, **kwargs):
         pk = kwargs.get('pk', '')
