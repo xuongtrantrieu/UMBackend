@@ -77,7 +77,7 @@ class Login(APIView):
         # Skipped checking if user is active or not, user is active by default so I make this simpler
 
         login(request, user)
-        previous_token = Token.objects.get(user=get_user(request))
+        previous_token, _ = Token.objects.get_or_create(user=get_user(request))
         expired = expire_token(previous_token)
         if expired:
             previous_token.delete()

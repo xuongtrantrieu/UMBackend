@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password
 from lib.logger import Logger
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
-from rest_framework.permissions import DjangoObjectPermissions
+from rest_framework.settings import api_settings
 
 
 class Users(generics.ListAPIView):

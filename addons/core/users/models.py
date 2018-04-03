@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from addons.core.usermanager.models import UserManager
+from rest_framework.settings import api_settings
 
 NAME_MAX_LENGTH = 100
 
@@ -38,3 +39,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self):
         return self.first_name
+
+    # def get_token(self):
+    #     jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+    #     jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
+    #     payload = jwt_payload_handler(self)
+    #     token = jwt_encode_handler(payload)
+    #     self.user_token = token
+    #
+    # def save(self, *args, **kwargs):
+    #     self.get_token()
+    #     super().save(*args, **kwargs)
+

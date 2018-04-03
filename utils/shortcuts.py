@@ -2,6 +2,7 @@ from django.utils import timezone
 from datetime import timedelta
 from UMBackend import settings
 
+
 def get_or_none(model, *args, **kwargs):
     """
         get a model or return None if not found
@@ -11,6 +12,7 @@ def get_or_none(model, *args, **kwargs):
         return model.objects.get(*args, **kwargs)
     except (model.DoesNotExist, ValueError, Exception):
         return None
+
 
 def expire_token(token):
     min_age = timezone.now() - timedelta(
