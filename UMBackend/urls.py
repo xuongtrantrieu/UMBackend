@@ -15,13 +15,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .views import api_root
+from .views import _api_root
 # from rest_framework_jwt.views import ObtainJSONWebToken
-from .views import login
+from .views import Login, Logout, CurrentUser
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', api_root),
+    path('', _api_root),
     path('users/', include('addons.core.users.urls')),
-    path('login/', login)
+    path('login/', Login.as_view()),
+    path('logout/', Logout.as_view()),
+    path('current/', CurrentUser.as_view())
 ]

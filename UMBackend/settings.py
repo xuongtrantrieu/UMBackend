@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 import os
 from os.path import join, dirname
 from dotenv import load_dotenv
+import datetime
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -36,6 +37,11 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = 'users.User'
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend', # default
+    'guardian.backends.ObjectPermissionBackend',
+)
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -50,16 +56,61 @@ INSTALLED_APPS = [
     'addons.core.usermanager',
     'rest_framework',
     'rest_framework_jwt',
+    'rest_framework.authtoken',
+    'guardian'
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': (
+   'rest_framework.permissions.AllowAny',
+)
     # 'JWT_VERIFY_EXPIRATION': False
 }
 
+# JWT_AUTH = {
+#     'JWT_ENCODE_HANDLER':
+#     'rest_framework_jwt.utils.jwt_encode_handler',
+#
+#     'JWT_DECODE_HANDLER':
+#     'rest_framework_jwt.utils.jwt_decode_handler',
+#
+#     'JWT_PAYLOAD_HANDLER':
+#     'rest_framework_jwt.utils.jwt_payload_handler',
+#
+#     'JWT_PAYLOAD_GET_USER_ID_HANDLER':
+#     'rest_framework_jwt.utils.jwt_get_user_id_from_payload_handler',
+#
+#     'JWT_RESPONSE_PAYLOAD_HANDLER':
+#     'rest_framework_jwt.utils.jwt_response_payload_handler',
+#
+#     'JWT_SECRET_KEY': SECRET_KEY,
+#     'JWT_GET_USER_SECRET_KEY': None,
+#     'JWT_PUBLIC_KEY': None,
+#     'JWT_PRIVATE_KEY': None,
+#     'JWT_ALGORITHM': 'HS256',
+#     'JWT_VERIFY': True,
+#     'JWT_VERIFY_EXPIRATION': True,
+#     'JWT_LEEWAY': 0,
+#     'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=4),
+#     'JWT_AUDIENCE': None,
+#     'JWT_ISSUER': None,
+#
+#     'JWT_ALLOW_REFRESH': True,
+#     'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),
+#
+#     'JWT_AUTH_HEADER_PREFIX': 'Token',
+#     'JWT_AUTH_COOKIE': None,
+#
+# }
+
+
 MIDDLEWARE = [
+    # 'lib.middlewares.OrganizationMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -67,7 +118,13 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+CORS_ALLOW_HEADERS = (
+    'x-csrftoken',
+)
 
 ROOT_URLCONF = 'UMBackend.urls'
 
@@ -135,6 +192,8 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+TOKEN_EXPIRED_AFTER_SECONDS = 16000
 
 
 # Static files (CSS, JavaScript, Images)

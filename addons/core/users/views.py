@@ -3,12 +3,14 @@ from .models import User
 from .serializers import UserSerializer
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password
-from lib.Logger import Logger
-
+from lib.logger import Logger
+from rest_framework_jwt.authentication import JSONWebTokenAuthentication
+from rest_framework.permissions import DjangoObjectPermissions
 
 
 class Users(generics.ListAPIView):
     serializer_class = UserSerializer
+    authentication_classes = (JSONWebTokenAuthentication,)
 
     def get(self, request):
         user_list = User.objects.all()
@@ -63,8 +65,11 @@ class Users(generics.ListAPIView):
 class UserDetail(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    authentication_classes = (JSONWebTokenAuthentication,)
+    permission_classes = (DjangoObjectPermissions,)
 
-    def get(self, request, pk=None):
+    def get(self, request, *args, **kwargs):
+        pk = kwargs.get('pk', '')
         user = User.objects.get(pk=pk)
 
         if not user:
@@ -123,7 +128,9 @@ class UserDetail(generics.ListAPIView):
         }
         return Response(context, status=context['status'])
 
-    def delete(self, request, pk=None):
+    @staticmethod
+    def delete(**kwargs):
+        pk = kwargs.get('pk', '')
         Logger().info(
             '{} user pk={}'.format('DELETE', pk)
         )
