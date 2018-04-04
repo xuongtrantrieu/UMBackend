@@ -69,6 +69,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
     ),
+    'EXCEPTION_HANDLER': 'utils.permissions.custom_exception_handler',
 }
 
 
@@ -78,6 +79,7 @@ JWT_AUTH = {
     'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),
     'JWT_DECODE_HANDLER': 'rest_framework_jwt.utils.jwt_decode_handler',
     'JWT_PAYLOAD_HANDLER': 'rest_framework_jwt.utils.jwt_payload_handler',
+    'JWT_AUTH_HEADER_PREFIX': 'Token',
 }
 
 

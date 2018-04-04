@@ -9,6 +9,7 @@ from utils.shortcuts import make_response, expire_token
 from django.contrib.auth import get_user, authenticate, login, logout
 from rest_framework.authtoken.models import Token
 from rest_framework_jwt.settings import api_settings
+from utils.permissions import CusCheckIsAuthenticated
 
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
@@ -53,6 +54,7 @@ class Register(APIView):
 
 class EditCurrentUser(APIView):
     authentication_classes = (JSONWebTokenAuthentication,)
+    permission_classes = (CusCheckIsAuthenticated,)
 
     def put(self, request):
         data = request.data
@@ -190,6 +192,7 @@ class Login(APIView):
 
 class Logout(APIView):
     authentication_classes = (JSONWebTokenAuthentication,)
+    permission_classes = (CusCheckIsAuthenticated,)
 
     def get(self, request):
         user = get_user(request)
@@ -223,6 +226,7 @@ class Logout(APIView):
 
 class DeleteCurrentUser(APIView):
     authentication_classes = (JSONWebTokenAuthentication,)
+    permission_classes = (CusCheckIsAuthenticated,)
 
     def delete(self, request):
         data = request.data

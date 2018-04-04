@@ -10,6 +10,7 @@ from django.conf import settings
 import os
 import time
 import datetime
+from django.contrib.auth import get_user
 
 PATTERN = r'(.*)-(.*)'
 BASE_DIR = settings.BASE_DIR
@@ -100,7 +101,7 @@ class CusIsAuthenticated(permissions.IsAuthenticated):
         Restrict access only to unauthenticated users.
     """
 
-    authentication_header_prefix = 'Token'
+    authentication_header_prefix = 'token'
 
     def has_permission(self, request, view, obj=None):
         auth_header = authentication.get_authorization_header(request).split()
@@ -115,7 +116,9 @@ class CusIsAuthenticated(permissions.IsAuthenticated):
             file_token = TOKEN_FILE + '_' + time_path + '.txt'
             PATH_TOKEN_BLACKLIST = os.path.join(BASE_DIR, "data", "token_blacklist", file_token)
 
-        if request.user and request.user.is_authenticated:
+        user = get_user(request)
+        # return Response(user.email)
+        if user and user.is_authenticated:
             try:
                 with open(PATH_TOKEN_BLACKLIST, 'r') as f:
                     raw_data = f.read()
@@ -148,7 +151,7 @@ class CusCheckIsAuthenticated(permissions.IsAuthenticated):
         Restrict access only to unauthenticated users.
     """
 
-    authentication_header_prefix = 'Token'
+    authentication_header_prefix = 'token'
 
     def has_permission(self, request, view, obj=None):
         auth_header = authentication.get_authorization_header(request).split()
@@ -180,11 +183,11 @@ class CusCheckIsAuthenticated(permissions.IsAuthenticated):
         else:
             return False
 
-def IsPassword(request):
+
+def is_password(request):
     if not request.user.check_password(request.DATA['password']):
             return False
     return True
-
 
 
 def custom_exception_handler(exc, context):
@@ -196,16 +199,14 @@ def custom_exception_handler(exc, context):
     if response is not None:
         response.data['status'] = response.status_code
         if response.data['detail'] == "Invalid token.":
-            response.data["code"] = (list(code.keys())[list(code.values()).index('Invalid token.')])
+            response.data["code"] = list(code.keys())[list(code.values()).index('Invalid token.')]
         elif response.data['detail'] == "Authentication credentials were not provided.":
-            response.data["code"] = (
-            list(code.keys())[list(code.values()).index('Authentication credentials were not provided.')])
+            response.data["code"] = list(code.keys())[list(code.values()).index('Authentication credentials were not provided.')]
         elif response.data['detail'] == "Paginate out of range":
-            response.data["code"] = (
-                list(code.keys())[list(code.values()).index('Paginate out of range')])
+            response.data["code"] = list(code.keys())[list(code.values()).index('Paginate out of range')]
     try:
         response.data['message'] = response.data.pop('detail')
-    except:
+    except exceptions:
         pass
 
     return response
