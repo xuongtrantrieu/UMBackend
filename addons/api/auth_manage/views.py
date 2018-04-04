@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from addons.core.users.models import User
-from addons.core.users.serializers import UserSerializer
+from .serializers import UserSerializer
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password
 from lib.logger import Logger
