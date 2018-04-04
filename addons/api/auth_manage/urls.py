@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import Register, Login, Logout, EditCurrentUser, DeleteCurrentUser, CurrentUser
+from .views import Register, Login, Logout, EditCurrentUser, DeleteCurrentUser, CurrentUser, UserList
 
 app_name = 'register'
 urlpatterns = (
@@ -9,5 +9,6 @@ urlpatterns = (
     path('logout/', Logout.as_view(), name='logout'),
     path('edit-current-user/', EditCurrentUser.as_view(), name='edit-current-user'),
     path('delete-current-user/', DeleteCurrentUser.as_view(), name='delete-current-user'),
+    path('user-list/', UserList.as_view(), name='user-list')
 )
 

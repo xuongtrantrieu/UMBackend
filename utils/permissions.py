@@ -94,6 +94,7 @@ class IsNotAuthenticated(permissions.IsAuthenticated):
         else:
             return True
 
+
 class CusIsAuthenticated(permissions.IsAuthenticated):
     """
         Restrict access only to unauthenticated users.
@@ -112,9 +113,7 @@ class CusIsAuthenticated(permissions.IsAuthenticated):
             TOKEN_FILE = "token_blacklist"
             time_path = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d')
             file_token = TOKEN_FILE + '_' + time_path + '.txt'
-
             PATH_TOKEN_BLACKLIST = os.path.join(BASE_DIR, "data", "token_blacklist", file_token)
-
 
         if request.user and request.user.is_authenticated:
             try:
