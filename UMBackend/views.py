@@ -5,9 +5,8 @@ from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from django.contrib.auth import authenticate, login, logout, get_user
 from rest_framework.authtoken.models import Token
 from rest_framework_jwt.settings import api_settings
-
 from addons.core.users.serializers import UserSerializer
-from utils.shortcuts import expire_token
+from utils.shortcuts import expire_token, make_response
 from lib.logger import Logger
 
 
@@ -21,21 +20,7 @@ def _api_root():
 
 
 class CurrentUser(APIView):
-    @staticmethod
-    def get(request):
-        user = get_user(request)
-        if user.is_anonymous:
-            context = {
-                'message': 'ANONYMOUS USER.',
-                'status': 404,
-            }
-            return Response(context, status=context['status'])
-        context = {
-            'message': 'OK',
-            'status': 200,
-            'data': UserSerializer(user).data
-        }
-        return Response(context, status=context['status'])
+    pass
 
 
 class Login(APIView):
@@ -51,7 +36,7 @@ class Login(APIView):
                 'status': 400,
                 'message': 'USER NOT FOUND.'
             }
-            return Response(context, status=context['status'])
+            return make_response(context)
 
         # Check if user has logged in or not
         user = get_user(request)
@@ -60,7 +45,7 @@ class Login(APIView):
                 'message': 'USER ALREADY LOGGED IN.',
                 'status': 400
             }
-            return Response(context, status=context['status'])
+            return make_response(context)
 
         password = data.get('password', '')
         user = authenticate(request, email=email, password=password)
@@ -72,7 +57,7 @@ class Login(APIView):
                 'message': 'INCORRECT LOGIN INFORMATION.',
                 'status': 400,
             }
-            return Response(context, status=context['status'])
+            return make_response(context)
 
         # Skipped checking if user is active or not, user is active by default so I make this simpler
 
@@ -92,8 +77,7 @@ class Login(APIView):
             'status': 200,
             'data': UserSerializer(user).data
         }
-
-        return Response(context, status=context['status'])
+        return make_response(context)
 
 
 class Logout(APIView):
@@ -109,7 +93,14 @@ class Logout(APIView):
             }
             return Response(context, status=context['status'])
 
-        token = Token.objects.get(user=user)
+        token = Token.objects.filter(user=user).first()
+        if not token:
+            context = {
+                'message': 'CANNOT FIND TOKEN',
+                'status': 500
+            }
+            return make_response(context)
+
         expire_token(token)
         user.user_token = ''
         user.save()
@@ -120,4 +111,4 @@ class Logout(APIView):
             'status': 200,
             'data': UserSerializer(user).data
         }
-        return Response(context, context['status'])
+        return make_response(context)

@@ -1,6 +1,7 @@
 from django.utils import timezone
 from datetime import timedelta
 from UMBackend import settings
+from rest_framework.response import Response
 
 
 def get_or_none(model, *args, **kwargs):
@@ -19,3 +20,7 @@ def expire_token(token):
         seconds=settings.TOKEN_EXPIRED_AFTER_SECONDS)
     expired = token.created < min_age
     return expired
+
+
+def make_response(context):
+    return Response(context, status=context.get('status', 200))

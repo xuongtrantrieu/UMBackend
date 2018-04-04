@@ -2,15 +2,14 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from addons.core.usermanager.models import UserManager
-from rest_framework.settings import api_settings
 
 NAME_MAX_LENGTH = 100
 
 
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, null=True)
-    first_name = models.CharField(max_length=NAME_MAX_LENGTH)
-    last_name = models.CharField(max_length=NAME_MAX_LENGTH)
+    first_name = models.CharField(max_length=NAME_MAX_LENGTH, blank=True, default='')
+    last_name = models.CharField(max_length=NAME_MAX_LENGTH, blank=True, default='')
     is_superuser = models.BooleanField(
         default=False,
         help_text='This is a superuser, I think.'
@@ -40,14 +39,18 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         return self.first_name
 
-    # def get_token(self):
-    #     jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
-    #     jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
-    #     payload = jwt_payload_handler(self)
-    #     token = jwt_encode_handler(payload)
-    #     self.user_token = token
-    #
-    # def save(self, *args, **kwargs):
-    #     self.get_token()
-    #     super().save(*args, **kwargs)
+    def update(self, **kwargs):
+        email = kwargs.get('email', self.email)
+        first_name = kwargs.get('first_name', self.first_name)
+        last_name = kwargs.get('last_name', self.last_name)
+        is_superuser = kwargs.get('is_superuser', self.is_superuser)
+        is_staff = kwargs.get('is_staff', self.is_staff)
+        is_active = kwargs.get('is_active', self.is_active)
+        self.email = email
+        self.first_name = first_name
+        self.last_name = last_name
+        self.is_superuser = is_superuser
+        self.is_staff = is_staff
+        self.is_active = is_active
+        self.save()
 

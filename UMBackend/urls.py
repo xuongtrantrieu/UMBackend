@@ -23,7 +23,7 @@ from rest_framework_jwt.views import refresh_jwt_token
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', _api_root),
-    path('users/', include('addons.core.users.urls')),
+    path('api/', include('addons.api.auth_manage.urls')),
     path('login/', Login.as_view()),
     path('logout/', Logout.as_view()),
     path('current/', CurrentUser.as_view()),
