@@ -5,7 +5,7 @@ from utils.shortcuts import get_or_none
 
 from rest_framework.views import exception_handler
 from utils.code import code
-from rest_framework import authentication, exceptions
+from rest_framework import authentication
 from django.conf import settings
 import os
 import time
@@ -206,7 +206,8 @@ def custom_exception_handler(exc, context):
             response.data["code"] = list(code.keys())[list(code.values()).index('Paginate out of range')]
     try:
         response.data['message'] = response.data.pop('detail')
-    except exceptions:
+    except Exception as e:
+        print(e)
         pass
 
     return response
