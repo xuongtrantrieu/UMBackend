@@ -8,8 +8,11 @@ https://docs.djangoproject.com/en/2.0/howto/deployment/wsgi/
 """
 
 import os
-
+from os import sys
+sys.path.append('~/Projects/UserManagement/UMBackend')
+sys.path.append('~/Projects/UserManagement/UMBackend/UMBackend')
 from django.core.wsgi import get_wsgi_application
+
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "UMBackend.settings")
 

@@ -33,7 +33,7 @@ SECRET_KEY = '022%q4^jm@i%!m70a-qb&l#49!m^z-g=45mo&4bv*(-glg@^8c'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [str(os.environ.get('ALLOWED_HOSTS')), 'localhost']
 
 AUTH_USER_MODEL = 'users.User'
 
