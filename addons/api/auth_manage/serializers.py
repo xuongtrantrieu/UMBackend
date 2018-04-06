@@ -5,4 +5,5 @@ from addons.core.users.models import User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'user_token')
+        fields = ('id', 'email', 'first_name', 'last_name',
+                  'is_online', 'user_token')

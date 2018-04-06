@@ -5,3 +5,4 @@ __pycache__
 debug_log
 .idea/
 lib/viewsets.py
+authentications.py
