@@ -1,3 +1,4 @@
+from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from addons.core.users.models import User
 from .serializers import UserSerializer
@@ -5,46 +6,68 @@ from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password
 from lib.logger import Logger
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
-from utils.shortcuts import make_response, expire_token
-from django.contrib.auth import get_user, authenticate, login, logout
+from utils.shortcuts import make_response, expired_or_not
+from rest_framework_jwt.authentication import get_authorization_header
+from rest_framework.authentication import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework_jwt.settings import api_settings
 from utils.permissions import CusCheckIsAuthenticated
+from inspect import stack
+from UMBackend import settings as my_settings
+from utils.authentications import Authentication
 
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
+logger = Logger()
+model = User.__name__.lower()
 
 
 class Register(APIView):
-    serializer_class = UserSerializer
+    # permission_classes = (CusCheckIsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
     def post(self, request):
         data = request.data
-        Logger().info(
-            '{} user {}'.format('POST', data)
+
+        logger.info(
+            '{_class} {method} {object} {data}'.format(
+                method=stack()[0][3], _class=self.__class__.__name__,
+                object=model,
+                data=data)
         )
-        is_valid = self.serializer_class(data=data).is_valid()
+
+        authorization = get_authorization_header(request)
+        if authorization:
+            context = {
+                'message': 'THERE IS CURRENTLY A USER ALREADY HAS LOGGED IN.',
+                'status': 400
+            }
+            return make_response(context)
+
+        is_valid = UserSerializer(data=data).is_valid()
 
         if not is_valid:
             email = data.get('email', '')
-            if User.objects.filter(email=email).first():
+            user = User.objects.filter(email=email).first()
+            if user and user.is_active:
                 context = {
                     'status': 400,
-                    'message': 'EMAIL IS ALREADY IN USED.'
+                    'message': 'THIS EMAIL IS ALREADY IN USED.'
                 }
                 return make_response(context)
 
+        data['password'] = make_password(data['password'])
         user, _ = User.objects.update_or_create(
             email=data.get('email', ''),
-            password=make_password(data.get('password', '')),
-            first_name=data.get('first_name', ''),
-            last_name=data.get('last_name', '')
+            defaults=data
         )
+        user.is_active = True
+        user.save()
 
-        user_serialized = self.serializer_class(user, many=False).data
+        user_serialized = UserSerializer(user, many=False)
         context = {
-            'data': user_serialized,
+            'data': user_serialized.data,
             'message': 'OK',
             'status': 200
         }
@@ -54,32 +77,36 @@ class Register(APIView):
 
 class EditCurrentUser(APIView):
     authentication_classes = (JSONWebTokenAuthentication,)
-    permission_classes = (CusCheckIsAuthenticated,)
 
     def put(self, request):
         data = request.data
-        user = get_user(request)
 
-        Logger().info(
-            '{} user {}'.format('PUT', data)
+        logger.info(
+            '{_class} {method} {object} {data}'.format(
+                method=stack()[0][3], _class=self.__class__.__name__,
+                object=model,
+                data=data)
         )
 
-        if user.is_anonymous:
+        authorization = get_authorization_header(request)
+        current_token = ''
+        if authorization:
+            current_token = authorization.split()[1]
+        if not current_token:
+            context = {
+                'message': "ANONYMOUS USER.",
+                'status': 400
+            }
+            return make_response(context)
+
+        current_user = request.user
+        if current_user.is_anonymous:
             context = {
                 'message': 'ANONYMOUS USER.',
                 'status': 400
             }
             return make_response(context)
-
-        # is_valid = UserSerializer(data=data).is_valid()
-        #
-        # if not is_valid:
-        #     context = {
-        #         'message': 'INVALID INPUT DATA.',
-        #         'status': 400,
-        #         'data': data
-        #     }
-        #     return make_response(context)
+        user = User.objects.filter(pk=current_user.pk).first()
 
         email = data.get('email', '')
         if user.email != email and len(User.objects.filter(email=email)) == 1:
@@ -89,13 +116,6 @@ class EditCurrentUser(APIView):
                 'data': data
             }
             return make_response(context)
-        # context = {
-        #     'message': 'DEBUG.',
-        #     'status': 400,
-        #     'email used times': len(User.objects.filter(email=email)),
-        #     'data': data
-        # }
-        # return make_response(context)
 
         password = make_password(data.get('password', user.password))
         first_name = data.get('first_name', user.first_name)
@@ -116,8 +136,17 @@ class EditCurrentUser(APIView):
 
 
 class UserList(APIView):
-    def get(self, request, *args, **kwargs):
-        user_list = User.objects.all()
+    authentication_classes = (JSONWebTokenAuthentication,)
+
+    def get(self, request):
+        data = request.data
+        logger.info(
+            '{_class} {method} {object} {data}'.format(
+                method=stack()[0][3], _class=self.__class__.__name__,
+                object=model,
+                data=data)
+        )
+        user_list = User.objects.filter(is_active=True)
         user_list_serialized = UserSerializer(user_list, many=True)
         if not user_list:
             context = {
@@ -136,51 +165,54 @@ class UserList(APIView):
 class Login(APIView):
     authentication_classes = (JSONWebTokenAuthentication,)
 
-    @staticmethod
-    def post(request):
+    def post(self, request):
         data = request.data
         email = data.get('email', '').lower()
+        password = data.get('password', '')
 
-        if not email:
-            context = {
-                'status': 400,
-                'message': 'USER NOT FOUND.'
-            }
-            return make_response(context)
+        logger.info(
+            '{_class} {method} {object} {data}'.format(
+                method=stack()[0][3], _class=self.__class__.__name__,
+                object=model,
+                data=data)
+        )
 
-        # Check if user has logged in or not
-        user = get_user(request)
-        if not user.is_anonymous:
+        user = User.objects.filter(email=email).first()
+        if not user.check_password(password):
             context = {
-                'message': 'USER ALREADY LOGGED IN.',
+                'message': 'INVALID LOGIN INFORMATION',
                 'status': 400
             }
             return make_response(context)
 
-        password = data.get('password', '')
-        user = authenticate(request, email=email, password=password)
-        if not user:
-            Logger().info(
-                '{} user {}'.format('LOGIN', data)
-            )
-            context = {
-                'message': 'INCORRECT LOGIN INFORMATION.',
-                'status': 400,
-            }
-            return make_response(context)
+        previous_token, _ = Token.objects.get_or_create(user=user)
+        previous_token.delete()
 
-        # Skipped checking if user is active or not, user is active by default so I make this simpler
-
-        login(request, user)
-        previous_token, _ = Token.objects.get_or_create(user=get_user(request))
-        expired = expire_token(previous_token)
-        if expired:
-            previous_token.delete()
-
+        # create token objects validated by user
+        token = Token.objects.create(user=user)
+        # save the same token into user_token using the same validation is user
         payload = jwt_payload_handler(user)
         token = jwt_encode_handler(payload)
         user.user_token = token
+
+        user.is_active = True
         user.save()
+
+
+        # if user:
+        #     Logger().info(
+        #         '{} user {}'.format('LOGIN', data)
+        #     )
+        #     context = {
+        #         'message': 'INCORRECT LOGIN INFORMATION.',
+        #         'status': 400,
+        #     }
+        #     return make_response(context)
+
+        # Skipped checking if user is active or not, user is active by default so I make this simpler
+
+        # request.session.set_expiry(10)
+        # login(request, user)
 
         context = {
             'message': 'OK',
@@ -192,32 +224,33 @@ class Login(APIView):
 
 class Logout(APIView):
     authentication_classes = (JSONWebTokenAuthentication,)
-    permission_classes = (CusCheckIsAuthenticated,)
+    # permission_classes = (CusCheckIsAuthenticated,)
 
     def get(self, request):
-        user = get_user(request)
-        if user.is_anonymous:
-            context = {
-                'message': 'ANONYMOUS USER.',
-                'status': 404
-            }
-            return Response(context, status=context['status'])
+        logger.info(
+            '{_class} {method} {object}'.format(
+                method=stack()[0][3], _class=self.__class__.__name__,
+                object=model)
+        )
 
-        token = Token.objects.filter(user=user).first()
-        if not token:
+        authorization = get_authorization_header(request)
+        current_token = ''
+        if authorization:
+            current_token = authorization.split()[1]
+        if not current_token:
             context = {
-                'message': 'CANNOT FIND TOKEN',
-                'status': 500
+                'message': "ANONYMOUS USER.",
+                'status': 400
             }
             return make_response(context)
 
-        expire_token(token)
-        user.user_token = ''
+        user = request.user
+        token = Token.objects.filter(user=user).first()
+        token.delete()
         user.save()
-        logout(request=request)
 
         context = {
-            'message': "TOKEN DELETED.",
+            'message': "LOGOUT SUCCESSFULLY.",
             'status': 200,
             'data': UserSerializer(user).data
         }
@@ -226,21 +259,35 @@ class Logout(APIView):
 
 class DeleteCurrentUser(APIView):
     authentication_classes = (JSONWebTokenAuthentication,)
-    permission_classes = (CusCheckIsAuthenticated,)
+    # permission_classes = (CusCheckIsAuthenticated,)
 
     def delete(self, request):
-        data = request.data
-        Logger().info(
-            '{} user pk={}'.format('DELETE', data)
+        # data = request.data
+        logger.info(
+            '{_class} {method} {object}'.format(
+                method=stack()[0][3], _class=self.__class__.__name__,
+                object=model)
         )
 
-        current_user = get_user(request)
+        current_user = request.user
+        if not current_user:
+            context = {
+                'message': 'ANONYMOUS USER.',
+                'status': 400
+            }
+            return make_response(context)
+
         user = User.objects.filter(pk=current_user.pk).first()
-        if user:
-            user.delete()
+        if not user:
+            context = {
+                'message': 'USER IS NOT IN DB :O.',
+                'status': 500
+            }
+        user.is_active = False
+        user.save()
 
         context = {
-            'message': 'OK',
+            'message': 'DELETE USER SUCCESSFULLY.',
             'status': 204
         }
         return make_response(context)
@@ -250,7 +297,24 @@ class CurrentUser(APIView):
     authentication_classes = (JSONWebTokenAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        user = get_user(request)
+        logger.info(
+            '{_class} {method} {object}'.format(
+                method=stack()[0][3], _class=self.__class__.__name__,
+                object=model)
+        )
+
+        authorization = get_authorization_header(request)
+        current_token = ''
+        if authorization:
+            current_token = authorization.split()[1]
+        if not current_token:
+            context = {
+                'message': "ANONYMOUS USER.",
+                'status': 400
+            }
+            return make_response(context)
+
+        user = request.user
         if user.is_anonymous:
             context = {
                 'message': 'ANONYMOUS USER.',

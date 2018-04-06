@@ -15,7 +15,7 @@ def get_or_none(model, *args, **kwargs):
         return None
 
 
-def expire_token(token):
+def expired_or_not(token): # in seconds
     min_age = timezone.now() - timedelta(
         seconds=settings.TOKEN_EXPIRED_AFTER_SECONDS)
     expired = token.created < min_age
@@ -23,4 +23,5 @@ def expire_token(token):
 
 
 def make_response(context):
-    return Response(context, status=context.get('status', 200))
+    response = Response(context, status=context.get('status', 200))
+    return response

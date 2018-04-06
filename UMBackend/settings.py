@@ -35,7 +35,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = [str(os.environ.get('ALLOWED_HOSTS')), 'localhost']
 
+
+# My modifying
 AUTH_USER_MODEL = 'users.User'
+TOKEN_EXPIRED_AFTER_SECONDS = 10
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # default
@@ -75,7 +78,7 @@ REST_FRAMEWORK = {
 
 JWT_AUTH = {
     'JWT_ALLOW_REFRESH': True,
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=4),
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=TOKEN_EXPIRED_AFTER_SECONDS),
     'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),
     'JWT_DECODE_HANDLER': 'rest_framework_jwt.utils.jwt_decode_handler',
     'JWT_PAYLOAD_HANDLER': 'rest_framework_jwt.utils.jwt_payload_handler',
@@ -166,8 +169,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
-TOKEN_EXPIRED_AFTER_SECONDS = 16000
 
 
 # Static files (CSS, JavaScript, Images)
