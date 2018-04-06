@@ -26,6 +26,7 @@ class User(AbstractBaseUser, PermissionsMixin):
                   'Unselect this instead of deleting accounts. '
     )
     user_token = models.TextField(max_length=200, null=True, blank=True)
+    is_online = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
     objects = UserManager()

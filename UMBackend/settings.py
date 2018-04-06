@@ -38,7 +38,7 @@ ALLOWED_HOSTS = [str(os.environ.get('ALLOWED_HOSTS')), 'localhost']
 
 # My modifying
 AUTH_USER_MODEL = 'users.User'
-TOKEN_EXPIRED_AFTER_SECONDS = 10
+TOKEN_EXPIRED_AFTER_SECONDS = 10000
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # default

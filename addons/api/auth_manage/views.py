@@ -40,7 +40,7 @@ class Register(APIView):
         authorization = get_authorization_header(request)
         if authorization:
             context = {
-                'message': 'THERE IS CURRENTLY A USER ALREADY HAS LOGGED IN.',
+                'message': 'THERE IS CURRENTLY A USER HAS ALREADY LOGGED IN.',
                 'status': 400
             }
             return make_response(context)
@@ -107,6 +107,13 @@ class EditCurrentUser(APIView):
             }
             return make_response(context)
         user = User.objects.filter(pk=current_user.pk).first()
+
+        if not user.is_online:
+            context = {
+                'message': 'ANONYMOUS USER.',
+                'status': 400
+            }
+            return make_response(context)
 
         email = data.get('email', '')
         if user.email != email and len(User.objects.filter(email=email)) == 1:
@@ -184,6 +191,12 @@ class Login(APIView):
                 'status': 400
             }
             return make_response(context)
+        if user.is_online:
+            context = {
+                'message': 'THERE IS CURRENTLY A USER HAS ALREADY LOGGED IN.',
+                'status': 400
+            }
+            return make_response(context)
 
         previous_token, _ = Token.objects.get_or_create(user=user)
         previous_token.delete()
@@ -196,23 +209,8 @@ class Login(APIView):
         user.user_token = token
 
         user.is_active = True
+        user.is_online = True
         user.save()
-
-
-        # if user:
-        #     Logger().info(
-        #         '{} user {}'.format('LOGIN', data)
-        #     )
-        #     context = {
-        #         'message': 'INCORRECT LOGIN INFORMATION.',
-        #         'status': 400,
-        #     }
-        #     return make_response(context)
-
-        # Skipped checking if user is active or not, user is active by default so I make this simpler
-
-        # request.session.set_expiry(10)
-        # login(request, user)
 
         context = {
             'message': 'OK',
@@ -244,9 +242,18 @@ class Logout(APIView):
             }
             return make_response(context)
 
-        user = request.user
+        current_user = request.user
+        user = User.objects.filter(pk=current_user.pk).first()
+        if not user.is_online:
+            context = {
+                'message': "ANONYMOUS USER.",
+                'status': 400
+            }
+            return make_response(context)
+
         token = Token.objects.filter(user=user).first()
         token.delete()
+        user.is_online = False
         user.save()
 
         context = {
@@ -270,7 +277,7 @@ class DeleteCurrentUser(APIView):
         )
 
         current_user = request.user
-        if not current_user:
+        if current_user.is_anonymous:
             context = {
                 'message': 'ANONYMOUS USER.',
                 'status': 400
@@ -283,7 +290,16 @@ class DeleteCurrentUser(APIView):
                 'message': 'USER IS NOT IN DB :O.',
                 'status': 500
             }
+
+        if not user.is_online:
+            context = {
+                'message': 'ANONYMOUS USER.',
+                'status': 400
+            }
+            return make_response(context)
+
         user.is_active = False
+        user.is_online = False
         user.save()
 
         context = {
@@ -321,6 +337,13 @@ class CurrentUser(APIView):
                 'status': 404,
             }
             return make_response(context)
+        if not user.is_online:
+            context = {
+                'message': 'ANONYMOUS USER.',
+                'status': 404,
+            }
+            return make_response(context)
+
         context = {
             'message': 'OK',
             'status': 200,
